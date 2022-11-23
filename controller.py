@@ -12,7 +12,12 @@ import math
 import time
 
 
+
 print("**Imports Completed\n")
+#############################
+# Globals
+#############################
+dir = 'C:\\Users\\Cesar\\Dropbox (Dartmouth College)\\harmonic-radar\\raw-data\\'
 
 #############################
 # Functions
@@ -43,17 +48,20 @@ def determine_frequencies(dev_handle, reading):
     #bwb = 300 khz (Beatrice had 3 khz before)
     #swp_time= 14 ms --- 30ms
 #############################
-def get_frequency_reading_wide(handle_analyzer, read_frequency):
+def get_frequency_reading_wide(handle_analyzer, read_frequency, name):
     '''
     This will not read the harmonic, it will only look at the frequency sent as parameter. The third parameter
     type of collection is more to determine whether to get the max value close to the requested frequency or the 
     frequency at exactly the value. For Single reading measurements max makes more sense whether for range measurements,
     frequency at value makes more sense. 
     '''
-    
+
     # analyzer variables
     bandwidth = 100e6 # the size of the zoom window, this has to vary with the spacing between tones (10.0e6)
     ref_level = -70 # how low should the floor be zoomed to? (-50 except for frequency sweep)
+
+    ## storage variables
+    fileName = dir + name
 
     # re-configure 
     bb_api.bb_configure_center_span(handle_analyzer, read_frequency, bandwidth)
@@ -64,7 +72,8 @@ def get_frequency_reading_wide(handle_analyzer, read_frequency):
     bb_api.bb_configure_proc_units(handle_analyzer, bb_api.BB_POWER) #they recommend/use BB_POWER
     
     # initiate
-    print("Acquiring Spectrum...\n")
+    msg = "Acquiring Spectrum- Centered at: " + str(read_frequency) + '\n'
+    print(msg)
     bb_api.bb_initiate(handle_analyzer, bb_api.BB_SWEEPING, 0)
     query = bb_api.bb_query_trace_info(handle_analyzer)
     
@@ -76,24 +85,28 @@ def get_frequency_reading_wide(handle_analyzer, read_frequency):
     tmp_reading = bb_api.bb_fetch_trace_32f(handle_analyzer, sweep_size)
     
     print("Saving Data to file..")
-    np.savetxt("test1.csv", tmp_reading['trace_min'], delimiter=",")
+    np.savetxt(fileName, tmp_reading['trace_min'], delimiter=",")
    
     print("Data Saved")
-    return 1
+    return
 
 #############################
 # start
 #############################
-
 # Open devices
 #handle_gen = vsg_api.vsg_open_device()["handle"]
 handle_analyzer = bb_api.bb_open_device()["handle"]
 
 print("**Succesful Conection to Devices")
 
-time.sleep(20)
-
-get_frequency_reading_wide(handle_analyzer,4.7e9)
+val = 0
+while val == 0:
+    device = input("Device:")
+    if device == 'quit':
+        break
+    range = input("Range:")
+    name = device + "_" + range + "_cm" 
+    get_frequency_reading_wide(handle_analyzer,4.7e9, name)
 #############################
 # Close connection
 #############################
