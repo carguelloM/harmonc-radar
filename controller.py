@@ -61,7 +61,7 @@ def get_frequency_reading_wide(handle_analyzer, read_frequency, name):
     ref_level = -70 # how low should the floor be zoomed to? (-50 except for frequency sweep)
 
     ## storage variables
-    fileName = dir + name
+    fileName = dir + name + '_' + str(read_frequency) + '_Hz'
 
     # re-configure 
     bb_api.bb_configure_center_span(handle_analyzer, read_frequency, bandwidth)
@@ -72,7 +72,7 @@ def get_frequency_reading_wide(handle_analyzer, read_frequency, name):
     bb_api.bb_configure_proc_units(handle_analyzer, bb_api.BB_POWER) #they recommend/use BB_POWER
     
     # initiate
-    msg = "Acquiring Spectrum- Centered at: " + str(read_frequency) + '\n'
+    msg = "Acquiring Spectrum- Centered at: "  + str(read_frequency) + "_Hz_" '\n'
     print(msg)
     bb_api.bb_initiate(handle_analyzer, bb_api.BB_SWEEPING, 0)
     query = bb_api.bb_query_trace_info(handle_analyzer)
@@ -90,15 +90,26 @@ def get_frequency_reading_wide(handle_analyzer, read_frequency, name):
     print("Data Saved")
     return
 
+def setGenerator(freq, power, vsg_hand):
+    # start signal generator
+    vsg_api.vsg_set_frequency(handle_gen, freq)
+    vsg_api.vsg_set_level(handle_gen, power)
+    vsg_api.vsg_set_sample_rate(handle_gen, 50e6)
+
+    # build the iq vector
+    vsg_api.vsgOutputCW(vsg_hand)
+    print("Continues Transmision started")
 #############################
 # start
 #############################
 # Open devices
-#handle_gen = vsg_api.vsg_open_device()["handle"]
+handle_gen = vsg_api.vsg_open_device()["handle"]
 handle_analyzer = bb_api.bb_open_device()["handle"]
 
-print("**Succesful Conection to Devices")
-
+print("**Succesful Conection to Devices\n")
+print("Init Signal Gen**\n")
+gen_freq = 2.35e9 ## 2.35 GHZ
+setGenerator(gen_freq, 0.0, handle_gen )
 val = 0
 while val == 0:
     device = input("Device:")
@@ -112,8 +123,8 @@ while val == 0:
 #############################
 
 # Stop waveform
-##bb_api.bb_abort(handle_analyzer)
-#print("**Waveform Aborted")
+bb_api.bb_abort(handle_analyzer)
+print("**Waveform Aborted")
 
 # Done with device
 #vsg_api.vsg_close_device(handle_gen)
